@@ -1,5 +1,6 @@
-from django.test import TestCase
 from django.contrib.auth.models import User
+from django.test import TestCase
+from django.urls import reverse
 
 from store.models import Category, Product
 
@@ -7,49 +8,57 @@ from store.models import Category, Product
 class TestCategoriesModel(TestCase):
 
     def setUp(self):
-        self.cat1 = Category.objects.create(name='django', slug='django')
+        self.data1 = Category.objects.create(name='django', slug='django')
 
     def test_category_model_entry(self):
         """
-        Test Category model data insertion  inc types/field attributes
+        Test Category model data insertion/types/field attributes
         """
-        data = self.cat1
+        data = self.data1
         self.assertTrue(isinstance(data, Category))
+        self.assertEqual(str(data), 'django')
 
-    def test_category_model_name_entry(self):
+    def test_category_url(self):
         """
-        Test Category model name
+        Test category model slug and URL reverse
         """
-        data = self.cat1
-        self.assertEqual(str(data.name), 'django')
-
-    def test_category_model_slug_entry(self):
-        """
-        Test Category model slug
-        """
-        data = self.cat1
-        self.assertEqual(str(data.slug), 'django')
+        data = self.data1
+        response = self.client.post(
+            reverse('store:category_list', args=[data.slug]))
+        self.assertEqual(response.status_code, 200)
 
 
 class TestProductsModel(TestCase):
-    # In order to test a product we must first create a category to assign it to.
-
     def setUp(self):
         Category.objects.create(name='django', slug='django')
         User.objects.create(username='admin')
-        self.prod1 = Product.objects.create(
-            category_id=1, title='django beginners', slug='django beginners', price='20.00', image='django')
+        self.data1 = Product.objects.create(category_id=1, title='django beginners', created_by_id=1,
+                                            slug='django-beginners', price='20.00', image='django')
+        self.data2 = Product.products.create(category_id=1, title='django advanced', created_by_id=1,
+                                             slug='django-advanced', price='20.00', image='django', is_active=False)
 
     def test_products_model_entry(self):
         """
-        Test Product model data insertion  inc types/field attributes
+        Test product model data insertion/types/field attributes
         """
-        data = self.prod1
+        data = self.data1
         self.assertTrue(isinstance(data, Product))
+        self.assertEqual(str(data), 'django beginners')
 
-    def test_category_model_name_entry(self):
+    def test_products_url(self):
         """
-        Test Category model name
+        Test product model slug and URL reverse
         """
-        data = self.prod1
-        self.assertEqual(str(data.slug), 'django beginners')
+        data = self.data1
+        url = reverse('store:product_detail', args=[data.slug])
+        self.assertEqual(url, '/item/django-beginners/')
+        response = self.client.post(
+            reverse('store:product_detail', args=[data.slug]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_products_custom_manager_basic(self):
+        """
+        Test product model custom manager returns only active products
+        """
+        data = Product.products.all()
+        self.assertEqual(data.count(), 1)
