@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.urls import reverse
 
 
 # Two tables to record Categories and Products
@@ -42,8 +43,8 @@ class Meta():
     # sorted by descending (last item in db shown first)
     ordering = ('-created',)
 
-    # def get_absolute_url(self):
-    #     return reverse("model_detail", kwargs={"pk": self.pk})
+    def get_absolute_url(self):
+        return reverse('store:product_detail', args=[self.slug])
 
     def __str__(self):
         return self.title
